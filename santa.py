@@ -56,54 +56,6 @@ def ansh(good_list, gifts):
     s += val
   return s / (2000*1000*1000)
 
-def greedy_kids(wishlists):
-  pred = [-1]*1000000
-  counts = [0]*1000
-  #for wishlist in wishlists[4000:]:
-  for w in range(0, len(wishlists[:4000]), 2):
-    wishlist = wishlists[w]
-    done = False
-    for item in wishlist:
-      if counts[item] < 999:
-        pred[w] = item
-        pred[w+1] = item
-        counts[item] += 2
-        done = True
-        break
-    if not done:
-      for item in range(1000):
-        if counts[item] < 999:
-          pred[w] = item
-          pred[w+1] = item
-          counts[item] += 2
-          break
-
-  for w in range(4000, 1000000):
-    wishlist = wishlists[w]
-    done = False
-    for item in wishlist:
-      if counts[item] < 1000:
-        pred[w] = item
-        counts[item] += 1
-        done = True
-        break
-    if not done:
-      for item in range(1000):
-        if counts[item] < 1000:
-          pred[w] = item
-          counts[item] += 1
-          break
-
-  print(counts)
-  print("Done")
-  return pred
-
-
-
-
-
-
-
 def combo_kids(pred, c_table, wishlists, top):
   n_ops = 0
   for i in range(4000, len(wishlists[4000:])):

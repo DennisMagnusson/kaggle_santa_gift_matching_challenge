@@ -165,16 +165,16 @@ def obvious_choices(pred, c_table, good_stuff, wishlists, top1, top2):
 
   return n_ops
 
-def fill_twins(pred, c_table, wishlists):
+def fill_twins(pred, c_table, wishlists, top):
   for gift in range(len(c_table)):
     if c_table[gift] > 998:
       continue
-    for top in range(10):
+    for t in range(top):
       done = False
       for i in range(0, 4000, 2):
         if pred[i] != -1:
           continue
-        if gift == wishlists[i][top] or gift == wishlists[i+1][top]:
+        if gift == wishlists[i][t] or gift == wishlists[i+1][t]:
           pred[i] = gift
           pred[i+1] = gift
           c_table[gift] += 2
@@ -184,10 +184,10 @@ def fill_twins(pred, c_table, wishlists):
         break
 
 #TODO Incredibly slow
-def fill_twins_santa_style(pred, c_table, good_stuff):
+def fill_twins_santa_style(pred, c_table, good_stuff, top):
   for g in range(len(good_stuff)):
     good_bois = good_stuff[g]
-    for boi in good_bois:
+    for boi in good_bois[:top]:
       if c_table[g] > 998:
         break
       if boi > 4000:
@@ -227,33 +227,33 @@ def fill_rest(pred, c_table):
         break
 
 #Combo of both greedy solutions.
+"""
+Idea:
+what if we do obvi on high top1 and low top2
+and then low top1 and high top2
+"""
 def greedy_combo(wishlists, good_list):
   #c_table = [0]*1000
   c_table = np.zeros(1000, dtype=int)
   pred = np.repeat(-1, 1000000)
 
-  for i in range(1, 10):
-    top1 = i+5
-    if top1 > 10:
-      top1 = 10
-    top2 = 300*i + 200
-    if top2 > 1000:
-      top2 = 1000
-    if i < 5:
-      i1 = obvious_choices(pred, c_table, good_list, wishlists, top1, top2)
-    else:
-      i1 = -1
+  print(obvious_choices(pred, c_table, good_list, wishlists, 4, 900))
+  print(obvious_choices(pred, c_table, good_list, wishlists, 9, 400))
 
+  for i in range(1, 10):
+    i1=0
     i3 = combo_santa(pred, c_table, good_list, i*100)
     i2 = combo_kids(pred, c_table, wishlists, i)
+    fill_twins_santa_style(pred, c_table, good_list, i*100)
+    fill_twins(pred, c_table, wishlists, i)
     print(i1, i2, i3)
  
   obvious_choices(pred, c_table, good_list, wishlists, 10, 1000)
   combo_kids(pred, c_table, wishlists, 10)
   combo_santa(pred, c_table, good_list, 1000)
 
-  fill_twins(pred, c_table, wishlists)
-  fill_twins_santa_style(pred, c_table, good_list)
+  fill_twins(pred, c_table, wishlists, 10)
+  fill_twins_santa_style(pred, c_table, good_list, 1000)
   fill_twins_greedy(pred, c_table)#This is wrong
 
   for i in range(0, 4000, 2):

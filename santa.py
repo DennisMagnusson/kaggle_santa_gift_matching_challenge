@@ -117,6 +117,29 @@ def obvious_choices(pred, c_table, good_stuff, wishlists, top1, top2):
 
   return n_ops
 
+
+def obvious_twins(pred, c_table, good_stuff, wishlists, top1, top2):
+  for i in range(4000):
+    if pred[i] != -1:
+      continue
+
+    wishlist = wishlists[i]
+    for w in range(top1):
+      wish = wishlist[w]
+      very_good_bois = good_stuff[wish][:top2]
+      if i in very_good_bois:
+        if c_table[wish] >= 999:
+          continue
+        
+        if i&1:
+          i -= 1
+
+        pred[i] = wish
+        pred[i+1]=wish
+        c_table[wish] += 2
+        break
+  
+
 def fill_twins(pred, c_table, wishlists, top):
   for gift in range(len(c_table)):
     if c_table[gift] > 998:
@@ -255,5 +278,5 @@ if __name__ == "__main__":
   for i in range(len(pred)):
     pred[i] = [i, pred[i]]
   print(avg_normalized_happiness(pred))
-  #for i in pred:
-    #print(str(i[0])+","+str(i[1]))
+  for i in pred:
+    print(str(i[0])+","+str(i[1]))

@@ -203,17 +203,17 @@ def fill_rest(pred, c_table):
 
 #Combo of both greedy solutions.
 """
-Idea:
-what if we do obvi on high top1 and low top2
-and then low top1 and high top2
+Another idea:
+if we try to minimize the number of -1s after the fact, that could be good.
+We can try to compute the expected reward and optimize it.
 """
 def greedy_combo(wishlists, good_list):
   #c_table = [0]*1000
   c_table = np.zeros(1000, dtype=int)
   pred = np.repeat(-1, 1000000)
 
-  print(obvious_choices(pred, c_table, good_list, wishlists, 4, 900))
-  print(obvious_choices(pred, c_table, good_list, wishlists, 9, 400))
+  print(obvious_choices(pred, c_table, good_list, wishlists, 4, 800))
+  print(obvious_choices(pred, c_table, good_list, wishlists, 8, 400))
 
   for i in range(1, 10):
     i1=0
@@ -278,5 +278,5 @@ if __name__ == "__main__":
   for i in range(len(pred)):
     pred[i] = [i, pred[i]]
   print(avg_normalized_happiness(pred))
-  for i in pred:
-    print(str(i[0])+","+str(i[1]))
+  #for i in pred:
+    #print(str(i[0])+","+str(i[1]))

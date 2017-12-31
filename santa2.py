@@ -6,17 +6,19 @@ import pandas as pd
 import numpy as np
 from evaluate import avg_normalized_happiness
 
-def fill_triplets(pred, c_table, pop):
+def fill_triplets(pred, c_table, item, greedy=True):
   for i in range(0, 5001, 3):
-    for item in reversed(pop):
-      item = item[0]
-      if c_table[item] > 997:
-        continue 
-    
-      pred[i] = item
-      pred[i+1] = item
-      pred[i+2] = item
-      c_table[item] += 3
+    if pred[i] != -1:
+      continue
+    if c_table[item] > 997:
+      continue
+    if not greedy and (c_table[item] == 996 or c_table[item] == 994):
+      continue
+  
+    pred[i] = item
+    pred[i+1] = item
+    pred[i+2] = item
+    c_table[item] += 3
 
 def fill_twins(pred, c_table, wishlists, top, gift):
   if c_table[gift] > 998:
@@ -52,18 +54,16 @@ def fill_twins_santa_style(pred, c_table, good_stuff, top, g):
     pred[boi+1] = g
     c_table[g] += 2
 
-def fill_twins_greedy(pred, c_table):
+def fill_twins_greedy(pred, c_table, gift):
   for i in range(5000, 40000, 2):
+    if c_table[gift] > 998:
+      return
     if pred[i] != -1:
       continue
 
-    for gift in range(len(c_table)):
-      if c_table[gift] > 998:
-        continue
-      pred[i] = gift
-      pred[i+1] = gift
-      c_table[gift] += 2
-      break
+    pred[i] = gift
+    pred[i+1] = gift
+    c_table[gift] += 2
 
 def fill_rest(pred, c_table, scores):
   for i in range(40000, len(pred)):
@@ -189,16 +189,18 @@ def no_sadness(wishlists, good_list, table, pop):
     for item in reversed(pop):
       item = item[0]
 
+
       for i in range(100):#Expected score = 2*i-1
+
         expected_score = 2*(10-i)-1
         s = int(floor(expected_score/2)) + 1
-        """
-        for k in range(1, 100):
+        
+        for k in range(0, 101, 10):
           if s <= k:
             continue
           obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, scores, improve, k, s-k)
           obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, scores, improve, s-k, k)
-        """
+        
         fill_twins_santa_style(pred, c_table, good_list, (i+1)*10, item)
         fill_twins(pred, c_table, wishlists, i+1, item)
 
@@ -239,14 +241,22 @@ def no_sadness(wishlists, good_list, table, pop):
             scores[w] = expected_score
             c_table[item] += 1
 
+        if i == 75:
+          fill_triplets(pred, c_table, item, False)#I am aware that this is stupid.
+          fill_twins_greedy(pred, c_table, item)
 
-  fill_triplets(pred, c_table, pop)#Fucks up at times
+
 
   for item in reversed(pop):
     item = item[0]
-    for i in range(100):
+
+    for i in range(101):
       fill_twins_santa_style(pred, c_table, good_list, i*10, item)
       fill_twins(pred, c_table, wishlists, i, item)
+    
+    fill_twins_greedy(pred, c_table, item)
+    fill_triplets(pred, c_table, item)
+
 
   c = 0
   for i in pred:
@@ -255,7 +265,6 @@ def no_sadness(wishlists, good_list, table, pop):
   
   print(str(c) + " sad bois")
 
-  fill_twins_greedy(pred, c_table)
   fill_rest(pred, c_table, scores)
   
   for k in range(len(c_table)):
@@ -281,7 +290,7 @@ def popularity_prio(wishlists, good_list):
   c = 0
   for i in range(len(pred)):
     if pred[i] == -1:
-      #print(i)
+      print(i)
       c += 1
   
   print(c)
@@ -293,9 +302,15 @@ if __name__ == "__main__":
   good_lists = pd.read_csv("data/gift_goodkids_v2.csv",  header=None).drop(0, 1).values
 
   pred = popularity_prio(wishlists, good_lists)
+  """
+  pred = [-1]*1000000
+  for i in range(1000):
+    for u in range(1000):
+      pred[i*1000+u] = u
+  """
+
   for i in range(len(pred)):
     pred[i] = [i, pred[i]]
-
-  print(avg_normalized_happiness(pred, wishlists, good_lists))
-  #for i in pred:
-    #print(str(i[0])+","+str(i[1]))
+  #print(avg_normalized_happiness(np.array(pred, dtype=np.int32), wishlists, good_lists))
+  for i in pred:
+    print(str(i[0])+","+str(i[1]))

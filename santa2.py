@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 from evaluate import avg_normalized_happiness
 
-def fill_triplets(pred, c_table, item, greedy=True):
+def fill_triplets_greedy(pred, c_table, item, greedy=True):
   for i in range(0, 5001, 3):
     if pred[i] != -1:
       continue
@@ -20,21 +20,34 @@ def fill_triplets(pred, c_table, item, greedy=True):
     pred[i+2] = item
     c_table[item] += 3
 
+
+#Kinda basic, but whatever
+def fill_triplets(pred, c_table, wishlists, top, gift):
+  if c_table[gift] > 997:
+    return
+  for i in range(0, 5000, 3):
+    if pred[i] != -1:
+      continue
+    if c_table[gift] > 997:
+      continue
+
+    if gift in wishlists[i:i+3][:top]:
+      pred[i] = gift
+      pred[i+1] = gift
+      pred[i+2] = gift
+      c_table[gift] += 3
+
 def fill_twins(pred, c_table, wishlists, top, gift):
   if c_table[gift] > 998:
     return
-  for t in range(top):
-    done = False
-    for i in range(5000, 40000, 2):
-      if pred[i] != -1:
-        continue
-      if gift == wishlists[i][t] or gift == wishlists[i+1][t]:
-        pred[i] = gift
-        pred[i+1] = gift
-        c_table[gift] += 2
-        done = True
-        break
-    if done:
+  for i in range(5000, 40000, 2):
+    if pred[i] != -1:
+      continue
+    if gift in wishlists[i][:top] or gift in wishlists[i+1][:top]:
+      pred[i] = gift
+      pred[i+1] = gift
+      c_table[gift] += 2
+      done = True
       break
 
 def fill_twins_santa_style(pred, c_table, good_stuff, top, g):
@@ -118,7 +131,7 @@ def obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, 
       continue
     if pred[kid] != -1:
       if improve and 2*(t1+t2) - scores[kid] > 0:#TODO FIXME Should this be 0?
-        if item in wishlists[kid][:(11-t1)] and kid in good_list[item][:(11-t2)*100]:#Awesome
+        if item in wishlists[kid][:(11-t1)] and kid in good_list[item][:(11-t2)*10]:#Awesome
           c_table[pred[kid]] -= 1
           pred[kid] = item
           c_table[item] += 1
@@ -126,7 +139,7 @@ def obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, 
    
       continue
 
-    if item in wishlists[kid][:(11-t1)] and kid in good_list[item][:(11-t2)*100]:
+    if item in wishlists[kid][:(11-t1)] and kid in good_list[item][:(11-t2)*10]:
       pred[kid] = item
       scores[kid] = 2*(t1+t2)
       c_table[item] += 1
@@ -181,6 +194,8 @@ def no_sadness(wishlists, good_list, table, pop):
         continue
 
       obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, scores, improve, 500, 50)
+
+      #FIXME Add this again.
       """
       for i in range(1, 11):
        obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, scores, improve, i, (10-i))
@@ -189,22 +204,23 @@ def no_sadness(wishlists, good_list, table, pop):
     for item in reversed(pop):
       item = item[0]
 
-
-      for i in range(100):#Expected score = 2*i-1
+      for i in range(0, 100, 10):
 
         expected_score = 2*(10-i)-1
         s = int(floor(expected_score/2)) + 1
+
+        fill_twins_santa_style(pred, c_table, good_list, (i+1)*10, item)
+        fill_twins(pred, c_table, wishlists, i+1, item)
         
         for k in range(0, 101, 10):
           if s <= k:
             continue
           obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, scores, improve, k, s-k)
           obvious_choices_item(pred, item, pop, wishlists, c_table, good_list, table, scores, improve, s-k, k)
-        
-        fill_twins_santa_style(pred, c_table, good_list, (i+1)*10, item)
-        fill_twins(pred, c_table, wishlists, i+1, item)
+       
+        fill_triplets(pred, c_table, wishlists, i+1, item)
 
-        for kid in good_list[item][:10*i]:#Good_list
+        for kid in good_list[item][i:10*i]:#Good_list
           if c_table[item] >= 1000:
             break
           if kid < 40000:
@@ -241,11 +257,18 @@ def no_sadness(wishlists, good_list, table, pop):
             scores[w] = expected_score
             c_table[item] += 1
 
-        if i == 75:
-          fill_triplets(pred, c_table, item, False)#I am aware that this is stupid.
+        if i == 90:
+          fill_triplets_greedy(pred, c_table, item, False)#I am aware that this is stupid.
           fill_twins_greedy(pred, c_table, item)
 
-
+  
+  c = 0
+  for i in range(len(pred)):
+    if pred[i] == -1:
+      c += 1
+      print(i, "abbcdefjkgk")
+  
+  print(c, "left after non-greedy shit")
 
   for item in reversed(pop):
     item = item[0]
@@ -255,7 +278,7 @@ def no_sadness(wishlists, good_list, table, pop):
       fill_twins(pred, c_table, wishlists, i, item)
     
     fill_twins_greedy(pred, c_table, item)
-    fill_triplets(pred, c_table, item)
+    fill_triplets_greedy(pred, c_table, item)
 
 
   c = 0
